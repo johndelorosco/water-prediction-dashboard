@@ -5,5 +5,4 @@ matplotlib
 seaborn
 plotly
 scikit-learn
-tensorflow==2.10.0  # or another compatible version
-streamlit-option-menu
+tensorflow==2.10.0
