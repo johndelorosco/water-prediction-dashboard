@@ -1,10 +1,9 @@
-pip install streamlit
-pip install pandas
-pip install numpy
-pip install matplotlib
-pip install seaborn
-pip install plotly
-pip install scikit-learn
-pip install tensorflow==2.10.0
-pip install streamlit-option-menu
-pip install --upgrade pip
+streamlit
+pandas
+numpy
+matplotlib
+seaborn
+plotly
+scikit-learn
+tensorflow==2.10.0  # or another compatible version
+streamlit-option-menu
