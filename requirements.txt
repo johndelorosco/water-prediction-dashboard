@@ -5,4 +5,6 @@ matplotlib
 seaborn
 plotly
 scikit-learn
-tensorflow==2.10.0
+tensorflow
+streamlit-option-menu
+openpyxl
