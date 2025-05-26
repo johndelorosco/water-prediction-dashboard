@@ -1,9 +1,9 @@
-streamlit==1.21.0  # Compatible with Python 3.13
-pandas==1.5.3      # Compatible with Streamlit
-numpy==1.23.5      # Downgraded to a version compatible with Seaborn
-matplotlib==3.7.1   # Compatible with Python 3.13
-seaborn==0.12.2    # Compatible with NumPy
-plotly==5.14.0     # Compatible with Python 3.13
-scikit-learn==1.2.2 # Compatible with Python 3.13
-tensorflow==2.11.0  # Compatible with Python 3.13
-openpyxl==3.1.0    # Required for reading Excel files
+streamlit==1.21.0      # Compatible with Python 3.13
+tensorflow==2.12.0     # Compatible with Python 3.13
+numpy==1.23.5          # Compatible with Seaborn 0.12.2
+pandas==1.5.3          # Compatible with Streamlit
+matplotlib==3.7.1       # Compatible with Python 3.13
+seaborn==0.12.2        # Compatible with NumPy
+plotly==5.14.0         # Compatible with Python 3.13
+scikit-learn==1.2.2    # Compatible with Python 3.13
+openpyxl==3.1.0        # Required for reading Excel files
