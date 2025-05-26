@@ -1,8 +1,8 @@
 streamlit==1.21.0      # Compatible with Python 3.13
-tensorflow==2.12.0     # Compatible with Python 3.13
+tensorflow==2.11.0     # Compatible with Python 3.8 to 3.12
 numpy==1.23.5          # Compatible with Seaborn 0.12.2
 pandas==1.5.3          # Compatible with Streamlit
-matplotlib==3.7.1       # Compatible with Python 3.13
+matplotlib==3.7.1      # Compatible with Python 3.13
 seaborn==0.12.2        # Compatible with NumPy
 plotly==5.14.0         # Compatible with Python 3.13
 scikit-learn==1.2.2    # Compatible with Python 3.13
