@@ -11,11 +11,13 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, LSTM, Conv1D, MaxPooling1D, Flatten, Dropout, TimeDistributed
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
+from datetime import datetime
+
 
 # Enhanced UI Configuration
 st.set_page_config(
     page_title="Taal Lake Water Quality Dashboard",
-    page_icon="💧",
+    page_icon="taal logo.png",  # Use local file as favicon
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -82,38 +84,39 @@ def load_data():
 
 df = load_data()
 
+
+
 # Sidebar Navigation
 with st.sidebar:
-    st.image("Taal lake Wa.png", use_container_width=True)
+    st.image("taal logo.png", width=250)
     st.markdown("## 💧 Taal Lake Monitoring")
 
     selected = option_menu(
-    menu_title=None,
-    options=["Overview", "Time Series", "Correlations", "Relationships", "Predictions", "Developer Info"],
-    icons=["house-fill", "graph-up", "link", "diagram-3-fill", "magic", "info-circle"],  # <- updated
-    default_index=0,
-    styles={
-        "container": {
-            "padding": "10px",
-            "background-color": "transparent"
-        },
-        "icon": {"color": "#2563EB", "font-size": "20px"},
-        "nav-link": {
-            "font-size": "16px",
-            "text-align": "left",
-            "margin": "5px",
-            "transition": "all 0.3s",
-            "border-radius": "10px"
-        },
-        "nav-link-selected": {
-            "background-color": "#2563EB",
-            "color": "white"
-        },
-    }
-)
+        menu_title=None,
+        options=["Overview", "Time Series", "Predictions", "Developer Info"],
+        icons=["house-fill", "graph-up", "magic", "info-circle"],
+        default_index=0,
+        styles={
+            "container": {
+                "padding": "10px",
+                "background-color": "transparent"
+            },
+            "icon": {"color": "#2563EB", "font-size": "20px"},
+            "nav-link": {
+                "font-size": "16px",
+                "text-align": "left",
+                "margin": "5px",
+                "transition": "all 0.3s",
+                "border-radius": "10px"
+            },
+            "nav-link-selected": {
+                "background-color": "#2563EB",
+                "color": "white"
+            },
+        }
+    )
 
-
-# Date Range Filter
+    # Date Range Filter
 if not df.empty:
     date_col = next((col for col in df.columns if "date" in col.lower() or "time" in col.lower()), None)
 
@@ -143,6 +146,10 @@ if not df.empty:
 
 # Overview Page
 if selected == "Overview":
+    # Display the banner image (above the title)
+    st.image("taal_banner.png", use_container_width=True)
+
+    # Title
     st.title("📊 Water Quality Overview")
 
     # Metrics Row
@@ -165,7 +172,6 @@ if selected == "Overview":
         """.format(len(df.columns) - 1), unsafe_allow_html=True)
 
     with col3:
-        # Use the detected date column instead of assuming first column is date
         if date_col:
             start_date = df[date_col].min().strftime('%Y-%m-%d')
         else:
@@ -179,7 +185,6 @@ if selected == "Overview":
         """.format(start_date), unsafe_allow_html=True)
 
     with col4:
-        # Use the detected date column instead of assuming first column is date
         if date_col:
             end_date = df[date_col].max().strftime('%Y-%m-%d')
         else:
@@ -195,7 +200,6 @@ if selected == "Overview":
     # Raw Data Display with options
     st.subheader("📋 Complete Raw Data")
 
-    # Add data view options
     data_view_options = st.radio(
         "Data Display Options:",
         ["View All Data", "Filter by Column", "Search Records"],
@@ -203,10 +207,7 @@ if selected == "Overview":
     )
 
     if data_view_options == "View All Data":
-        # Show the complete dataframe with pagination
         st.dataframe(df, use_container_width=True, height=500)
-
-        # Add download button
         csv = df.to_csv(index=False).encode('utf-8')
         st.download_button(
             label="📥 Download Full Data as CSV",
@@ -216,7 +217,6 @@ if selected == "Overview":
         )
 
     elif data_view_options == "Filter by Column":
-        # Let users select columns to display
         all_columns = df.columns.tolist()
         selected_columns = st.multiselect("Select columns to display:", all_columns, default=all_columns[:5])
 
@@ -226,16 +226,15 @@ if selected == "Overview":
             st.info("Please select at least one column to display data.")
 
     elif data_view_options == "Search Records":
-        # Simple search functionality
         search_col = st.selectbox("Select column to search:", df.columns.tolist())
 
-        if df[search_col].dtype == 'object':  # For text columns
+        if df[search_col].dtype == 'object':
             search_term = st.text_input("Enter search term:")
             if search_term:
                 filtered_df = df[df[search_col].astype(str).str.contains(search_term, case=False)]
                 st.dataframe(filtered_df, use_container_width=True, height=500)
                 st.write(f"Found {len(filtered_df)} matching records")
-        else:  # For numeric columns
+        else:
             min_val = float(df[search_col].min())
             max_val = float(df[search_col].max())
             range_val = st.slider(f"Select range for {search_col}:",
@@ -249,6 +248,7 @@ if selected == "Overview":
 
 # Time Series
 elif selected == "Time Series":
+    st.image("taal_banner.png", use_container_width=True)
     st.title("📈 Time Series Analysis")
 
     if not df.empty:
@@ -257,9 +257,19 @@ elif selected == "Time Series":
         if time_col:
             df[time_col] = pd.to_datetime(df[time_col])
 
-            # Get numeric columns and exclude 'year' and 'month'
-            numeric_cols = df.select_dtypes(include='number').columns.tolist()
-            numeric_cols = [col for col in numeric_cols if col.lower() not in ['year', 'month']]
+            # Extract year and month from time_col for filtering
+            df['Year'] = df[time_col].dt.year
+            df['Month'] = df[time_col].dt.month
+
+            # Apply filters based on the sidebar date selection
+            df_filtered = df.copy()  # Keep the filtered data separately
+
+            # Prepare numeric columns excluding Year and Month
+            numeric_cols = df_filtered.select_dtypes(include='number').columns.tolist()
+            if 'Year' in numeric_cols:
+                numeric_cols.remove('Year')
+            if 'Month' in numeric_cols:
+                numeric_cols.remove('Month')
 
             # Initialize session state
             if "time_series_selected_params" not in st.session_state:
@@ -273,7 +283,7 @@ elif selected == "Time Series":
             # Select All checkbox
             select_all = st.checkbox("Select All Parameters")
 
-            # Handle Select All logic
+            # If Select All is clicked, update session state once
             if select_all and not st.session_state.select_all_clicked:
                 st.session_state.time_series_selected_params = numeric_cols
                 st.session_state.select_all_clicked = True
@@ -281,20 +291,20 @@ elif selected == "Time Series":
                 st.session_state.time_series_selected_params = []
                 st.session_state.select_all_clicked = False
 
-            # Parameter multiselect
+            # Multiselect (will not override if you're selecting manually)
             selected_params = st.multiselect(
                 "Choose parameters:",
                 options=numeric_cols,
                 default=st.session_state.time_series_selected_params
             )
 
-            # Sync selected parameters
+            # Always sync selected parameters
             st.session_state.time_series_selected_params = selected_params
 
-            # Plot if parameters selected
-            if selected_params:
+            # Plotting
+            if selected_params and not df_filtered.empty:
                 fig = px.line(
-                    df,
+                    df_filtered,
                     x=time_col,
                     y=selected_params,
                     labels={"value": "Measurement", "variable": "Parameter"},
@@ -315,119 +325,19 @@ elif selected == "Time Series":
                 )
 
                 st.plotly_chart(fig, use_container_width=True)
+
+                # Visualization Meters for Selected Parameters
+                st.markdown("#### Visualization Meters")
+                for param in selected_params:
+                    if param in df_filtered.columns:
+                        avg_value = df_filtered[param].mean()
+                        st.metric(label=param, value=f"{avg_value:.2f}", delta=f"{df_filtered[param].max() - df_filtered[param].min():.2f}")
+
             else:
-                st.info("Please select at least one parameter to generate the plot.")
+                st.info("Please select at least one parameter and ensure the selected filters have data to generate the plot.")
         else:
             st.warning("⚠️ No date/time column detected in the dataset.")
 
-# Correlations
-elif selected == "Correlations":
-    st.title("🔗 Correlation Heatmap")
-
-    if not df.empty:
-        # Drop 'Year' column if it exists
-        if 'Year' in df.columns:
-            df = df.drop(columns=['Year'])
-
-        # Location filter using the 'Site' column
-        site_options = df['Site'].dropna().unique()
-        view_mode = st.radio("Select View Mode:", ["All Sites", "By Site"], horizontal=True)
-
-        if view_mode == "By Site":
-            selected_site = st.selectbox("Select Site:", sorted(site_options))
-            filtered_df = df[df['Site'] == selected_site]
-            st.markdown(f"#### Correlation Heatmap for {selected_site}")
-        else:
-            filtered_df = df.copy()
-            st.markdown("#### Correlation Heatmap for All Sites")
-
-        # Compute correlation matrix on numeric columns only
-        numeric_df = filtered_df.select_dtypes(include='number')
-        corr_matrix = numeric_df.corr().round(2)
-
-        # Plot heatmap with annotations
-        fig = go.Figure(data=go.Heatmap(
-            z=corr_matrix.values,
-            x=corr_matrix.columns,
-            y=corr_matrix.columns,
-            text=corr_matrix.values.round(2),
-            texttemplate="%{text}",
-            colorscale="RdBu",
-            zmin=-1,
-            zmax=1,
-            hoverongaps=False,
-            colorbar=dict(title="Correlation")
-        ))
-
-        fig.update_layout(
-            title="Correlation Matrix",
-            xaxis_title="Parameters",
-            yaxis_title="Parameters",
-            autosize=False,
-            width=850,
-            height=800,
-        )
-        st.plotly_chart(fig)
-
-
-        # Top Correlations
-        st.subheader("📊 Top Correlations")
-        upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
-        top_corrs = upper.unstack().dropna().sort_values(ascending=False).head(5)
-
-        cols = st.columns(5)
-        for i, ((var1, var2), val) in enumerate(top_corrs.items()):
-            cols[i].metric(
-                f"{var1} & {var2}",
-                f"{val:.2f}",
-                delta_color="inverse"
-            )
-
-# Relationships
-elif selected == "Relationships":
-    st.title("📊 Parameter Relationships")
-
-    if not df.empty:
-        # Define the specific parameters of interest
-        selected_parameters = ["pH", "Ammonia", "Nitrate", "Phosphate", "Dissolved Oxygen", "Sulfide", "Carbon Dioxide"]
-
-        # Filter only those that exist in the dataset
-        valid_params = [p for p in selected_parameters if p in df.columns]
-
-        if len(valid_params) < 2:
-            st.warning("Not enough valid parameters found in the dataset.")
-        else:
-            col1, col2 = st.columns(2)
-            with col1:
-                x = st.selectbox("X-axis Parameter", options=valid_params, index=None, placeholder="Please choose", key="x_axis_rel")
-            with col2:
-                # Filter out selected X from Y options
-                y_options = [p for p in valid_params if p != x] if x else valid_params
-                y = st.selectbox("Y-axis Parameter", options=y_options, index=None, placeholder="Please choose", key="y_axis_rel")
-
-            if x and y:
-                # Create an interactive scatter plot with Plotly
-                fig = px.scatter(df, x=x, y=y, title=f"Relationship between {x} and {y}",
-                                 labels={x: x, y: y},
-                                 hover_data={x: True, y: True, 'index': df.index},
-                                 template='plotly_white')
-
-                # Compute and display correlation
-                correlation = df[[x, y]].corr().iloc[0, 1]
-
-                # Add correlation as a text annotation
-                fig.add_annotation(
-                    text=f"Correlation: {correlation:.2f}",
-                    xref="paper", yref="paper",
-                    x=0.5, y=-0.1,
-                    showarrow=False,
-                    font=dict(size=14)
-                )
-
-                # Display the plot
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("Please choose both X and Y parameters to view the relationship.")
 
 # Predictions Page
 if selected == "Predictions":
@@ -688,9 +598,9 @@ if selected == "Predictions":
 
 
 
-
 # Developer Info
 elif selected == "Developer Info":
+    st.image("taal_banner.png", use_container_width=True)
     st.title("👨‍💻 Developer Information")
     st.markdown("""
 This interactive dashboard helps visualize and analyze **Taal Lake's water quality** data.
@@ -710,43 +620,47 @@ This interactive dashboard helps visualize and analyze **Taal Lake's water quali
 
     # Developer data
     devs = [
-        {
-            "name": "Clark Patrick G. Agravante",
-            "role": "Project Lead / Full-Stack Developer",
-            "desc": "Coordinates the team and ensures the quality of the overall application.",
-            "image": "dev1.jpg"
-        },
-        {
-            "name": "Lebron James G. Larido",
-            "role": "Backend Developer",
-            "desc": "Developed the backend data pipelines and API integrations.",
-            "image": "dev2.jpg"
-        },
-        {
-            "name": "Nel Johnceen Pulido",
-            "role": "Data Analyst",
-            "desc": "Analyzed the water quality data and generated visual insights.",
-            "image": "dev3.jpg"
-        },
-        {
-            "name": "Johndel M. Orosco",
-            "role": "UI/UX Designer",
-            "desc": "Designed the dashboard interface and user experience.",
-            "image": "dev4.jpg"
-        },
-        {
-            "name": "Carl Louise Sambrano",
-            "role": "Frontend Developer",
-            "desc": "Implemented the frontend components and visualizations.",
-            "image": "dev5.jpg"
-        },
-        {
-            "name": "Precious Erica G. Sueño",
-            "role": "Documentation & Deployment",
-            "desc": "Handled deployment, packaging, and writing user documentation.",
-            "image": "dev6.png"
-        },
-    ]
+
+    {
+        "name": "Lebron James G. Larido",
+        "role": "Project Lead / Full-Stack Developer",
+        "desc": "Oversaw the entire development process, handled both frontend and backend tasks, and ensured seamless integration across all components.",
+        "image": "dev2.jpg"
+    },
+    {
+        "name": "Clark Patrick G. Agravante",
+        "role": "Dashboard Developer / UI/UX Designer",
+        "desc": "Designed the user interface and experience, and developed the main dashboard layout and core components of the application.",
+        "image": "dev1.jpg"
+    },
+    {
+        "name": "Nel Johnceen Pulido",
+        "role": "Data Analyst",
+        "desc": "Handled data processing, analysis, and transformation to ensure accurate and meaningful insights were integrated into the system.",
+        "image": "dev3.jpg"
+    },
+    {
+        "name": "Johndel M. Orosco",
+        "role": "Backend Developer",
+        "desc": "Contributed to server-side development, database integration, and implementation of backend functionalities.",
+        "image": "dev4.jpg"
+    },
+    {
+         "name": "Precious Erica G. Sueño",
+        "role": "UI Support & Deployment Coordinator",
+        "desc": "Managed project deployment and documentation, and provided minor enhancements to the user interface during development.",
+        "image": "dev6.png"
+
+    },
+    {
+        "name": "Carl Louise Sembrano",
+        "role": "Documentation Assistant",
+        "desc": "Assisted in preparing and organizing the project documentation to ensure clarity, consistency, and completeness.",
+        "image": "dev5.jpg"
+    }
+
+]
+
 
     # Display 3 developers per row
     for i in range(0, len(devs), 3):
